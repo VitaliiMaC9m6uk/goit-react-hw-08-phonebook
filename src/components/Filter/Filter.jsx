@@ -1,18 +1,27 @@
-import { useDispatch } from "react-redux";
-import { changeFilter } from "store/contacts/filterSlice";
-// import { changeFilter } from 'store/contacts/contactsSlice';
+import css from './Filter.module.css';
+import { useDispatch, useSelector } from 'react-redux';
+import { getFilter } from 'redux/contacts/selectors';
+import { setFilter } from 'redux/contacts/filterSlice';
 
-
-const Filter = () => {  
+export const Filter = () => {
   const dispatch = useDispatch();
-  const hendleSaveFilter = (e) => {    
-    dispatch(changeFilter(e.target.value));
-  }
-    return (
-      <>
-        <label>Find contacts by name</label>
-        <input onChange={hendleSaveFilter}></input>
-      </>
-    );
-}
-export default Filter;
+  const filter = useSelector(getFilter);
+
+  const handleChange = e => {
+    dispatch(setFilter(e.target.value));
+  };
+
+  return (
+    <div>
+      <label className={css.filterLabel}>Find contacts by Name </label>
+      <input
+        className={css.filterName}
+        type="text"
+        name="filter"
+        placeholder="Enter filter"
+        value={filter}
+        onChange={handleChange}
+      />
+    </div>
+  );
+};

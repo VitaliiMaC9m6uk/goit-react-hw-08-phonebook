@@ -1,51 +1,52 @@
-import ContactForm from "./ContactForm/ContactForm";
-import ListContacts from "./ListContacts/ListContacts";
-import Filter from "./Filter/Filter";
-import { useDispatch, useSelector } from 'react-redux';
-import { contactsSelector } from 'store/contacts/selectors';
-import { addContact, fetchContacts } from 'store/contacts/contactsThunks';
-import { nanoid } from "@reduxjs/toolkit";
-import { useEffect } from "react";
-import Notiflix from 'notiflix';
+import React, { useEffect, lazy } from 'react';
+import { useDispatch } from 'react-redux';
+import { Route, Routes } from 'react-router-dom';
+import { Layout } from './Layout';
+import { PrivateRoute } from './PrivateRoute';
+import { PublicRoute } from './RestrictedRoute';
+import { refreshUser } from 'redux/auth/operations';
+import { useAuth } from './hooks';
+import { Loader } from './Loader/Loader';
+
+const HomePage = lazy(() => import('../pages/Home'));
+const RegisterPage = lazy(() => import('../pages/Register'));
+const LoginPage = lazy(() => import('../pages/Login'));
+const ContactsPage = lazy(() => import('../pages/Contacts'));
 
 export const App = () => {
-
-  const contacts = useSelector(contactsSelector);
   const dispatch = useDispatch();
 
+  const { isRefreshing } = useAuth();
+
   useEffect(() => {
-    dispatch(fetchContacts());
+    dispatch(refreshUser());
   }, [dispatch]);
 
-  const hendleSubmit = e => {
-    if (contacts) {
-      const filterContacts = contacts.filter(
-        contact =>
-          contact.name.toLocaleLowerCase().indexOf(e.name.toLocaleLowerCase()) >
-          -1
-      );
-      if (filterContacts.length > 0) {
-        const sameNames = filterContacts.map(contact => contact.name);
-        return Notiflix.Notify.failure(`${sameNames} is already in contacts.`);      
-      }
-    }  
-    const newContact = {
-      name: e.name,
-      phone: e.number,
-      id:nanoid(),
-    }
-    dispatch(addContact(newContact));        
-  };
-  
-  return (
-    <div>
-      <h1>Phonebook</h1>
-      <ContactForm
-        submit={hendleSubmit}
-      />
-      <h2>Contacts</h2>
-      <Filter/>
-      <ListContacts/>
-    </div>
+  return isRefreshing ? (
+    <Loader />
+  ) : (
+    <Routes>
+      <Route path="/" element={<Layout />}>
+        <Route index element={<HomePage />} />
+        <Route
+          path="register"
+          element={
+            <PublicRoute redirectTo="/contacts" component={<RegisterPage />} />
+          }
+        />
+        <Route
+          path="login"
+          element={
+            <PublicRoute redirectTo="/contacts" component={<LoginPage />} />
+          }
+        />
+        <Route
+          path="contacts"
+          element={
+            <PrivateRoute redirectTo="/login" component={<ContactsPage />} />
+          }
+        />
+      </Route>
+    </Routes>
   );
-}
+};
